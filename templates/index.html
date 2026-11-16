@@ -1,0 +1,253 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LogGuard Dashboard</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<header>
+    <h1>LOGGUARD</h1>
+    <p>Security Log Analysis Dashboard</p>
+</header>
+
+<main>
+
+    <h2>Security Overview</h2>
+
+    <!-- Statistics Cards -->
+
+    <div class="stats">
+
+        <div class="card">
+            <h3>Total IPs</h3>
+            <p>{{ total_ips }}</p>
+        </div>
+
+        <div class="card high">
+            <h3>High Risk</h3>
+            <p>{{ high_risk }}</p>
+        </div>
+
+        <div class="card medium">
+            <h3>Medium Risk</h3>
+            <p>{{ medium_risk }}</p>
+        </div>
+
+        <div class="card low">
+            <h3>Low Risk</h3>
+            <p>{{ low_risk }}</p>
+        </div>
+
+        <div class="card">
+            <h3>Total Login Attempts</h3>
+            <p>{{ total_attempts }}</p>
+        </div>
+
+        <div class="card low">
+            <h3>Successful Logins</h3>
+            <p>{{ successful_attempts }}</p>
+        </div>
+
+        <div class="card high">
+            <h3>Failed Logins</h3>
+            <p>{{ failed_attempts }}</p>
+        </div>
+
+    </div>
+
+
+    <!-- Security Alert -->
+
+    {% if high_risk > 0 %}
+
+    <div class="alert-panel">
+        <h3>⚠ Security Alert Detected!</h3>
+
+        <p>
+            {{ high_risk }} IP address(es) classified as HIGH RISK.
+            Possible brute-force login activity detected.
+        </p>
+    </div>
+
+    {% else %}
+
+    <div class="safe-panel">
+        <h3>✓ No High-Risk Activity</h3>
+        <p>No IP addresses are currently classified as high risk.</p>
+    </div>
+
+    {% endif %}
+
+
+    <!-- Login Activity Chart -->
+
+    <h2 class="section-heading">Login Activity Analysis</h2>
+
+    <div class="chart-card">
+
+        <h3>Successful vs Failed Logins</h3>
+
+        <div class="chart-row">
+            <span>Successful</span>
+
+            <div class="bar-background">
+                <div class="bar success-bar"
+                     style="width: {{ success_percent }}%">
+                </div>
+            </div>
+
+            <strong>{{ successful_attempts }}</strong>
+        </div>
+
+        <div class="chart-row">
+            <span>Failed</span>
+
+            <div class="bar-background">
+                <div class="bar failed-bar"
+                     style="width: {{ failed_percent }}%">
+                </div>
+            </div>
+
+            <strong>{{ failed_attempts }}</strong>
+        </div>
+
+    </div>
+
+
+    <!-- IP Security Report -->
+
+    <h2 class="section-heading">IP Security Report</h2>
+
+    <div class="toolbar">
+
+        <input
+            type="text"
+            id="searchInput"
+            placeholder="Search IP address..."
+            onkeyup="filterTable()"
+        >
+
+        <select id="riskFilter" onchange="filterTable()">
+            <option value="ALL">All Risk Levels</option>
+            <option value="HIGH">High Risk</option>
+            <option value="MEDIUM">Medium Risk</option>
+            <option value="LOW">Low Risk</option>
+        </select>
+
+        <a href="{{ url_for('download_report') }}"
+           class="download-btn">
+            Download CSV
+        </a>
+
+    </div>
+
+
+    <table id="securityTable">
+
+        <thead>
+            <tr>
+                <th>IP Address</th>
+                <th>Failed Attempts</th>
+                <th>Risk Level</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            {% for item in reports %}
+
+            <tr>
+                <td>{{ item.ip_address }}</td>
+
+                <td>{{ item.failed_attempts }}</td>
+
+                <td>
+                    <span class="risk-badge {{ item.risk_level|lower }}">
+                        {{ item.risk_level }}
+                    </span>
+                </td>
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+
+    <!-- IP-wise Activity -->
+
+    <h2 class="section-heading">IP-wise Login Activity</h2>
+
+    <table id="activityTable">
+
+        <thead>
+            <tr>
+                <th>IP Address</th>
+                <th>Successful Logins</th>
+                <th>Failed Logins</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            {% for item in activity %}
+
+            <tr>
+                <td>{{ item.ip_address }}</td>
+                <td>{{ item.successful_logins }}</td>
+                <td>{{ item.failed_logins }}</td>
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</main>
+
+
+<!-- Search and Filter JavaScript -->
+
+<script>
+
+function filterTable() {
+
+    var searchInput = document.getElementById("searchInput");
+    var riskFilter = document.getElementById("riskFilter");
+
+    var searchValue = searchInput.value.toLowerCase();
+    var riskValue = riskFilter.value;
+
+    var table = document.getElementById("securityTable");
+    var rows = table.getElementsByTagName("tr");
+
+    for (var i = 1; i < rows.length; i++) {
+
+        var ip = rows[i].cells[0].textContent.toLowerCase();
+        var risk = rows[i].cells[2].textContent.trim().toUpperCase();
+
+        var matchesSearch = ip.includes(searchValue);
+
+        var matchesRisk =
+            riskValue === "ALL" || risk === riskValue;
+
+        if (matchesSearch && matchesRisk) {
+            rows[i].style.display = "";
+        }
+        else {
+            rows[i].style.display = "none";
+        }
+    }
+}
+
+</script>
+
+</body>
+</html>
